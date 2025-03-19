@@ -1,148 +1,88 @@
-import React, { useState, useEffect } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+import React from "react";
+import { Link } from "react-router-dom";
 
-const AgentForm = ({ agent, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    password: "",
-  });
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (agent) {
-      setFormData({
-        name: agent.name || "",
-        email: agent.email || "",
-        mobile: agent.mobile || "",
-        password: "", // Don't populate password for security
-      });
-    }
-  }, [agent]);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = "Mobile number is required";
-    } else if (!/^\+?[0-9]{8,15}$/.test(formData.mobile.replace(/\s/g, ""))) {
-      newErrors.mobile =
-        "Please enter a valid mobile number with country code (e.g., +1234567890)";
-    }
-
-    if (!agent && !formData.password) {
-      newErrors.password = "Password is required for new agents";
-    } else if (!agent && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    if (validateForm()) {
-      // If editing and password is empty, remove it from submission
-      const dataToSubmit = { ...formData };
-      if (agent && !dataToSubmit.password) {
-        delete dataToSubmit.password;
-      }
-
-      onSubmit(dataToSubmit);
-    }
-  };
-
+const AgentList = ({ agents, onDelete, isDeleting }) => {
   return (
-    <Form onSubmit={handleSubmit}>
-      <Form.Group className="mb-3">
-        <Form.Label>Name</Form.Label>
-        <Form.Control
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          isInvalid={!!errors.name}
-          placeholder="Enter agent name"
-        />
-        <Form.Control.Feedback type="invalid">
-          {errors.name}
-        </Form.Control.Feedback>
-      </Form.Group>
-
-      <Form.Group className="mb-3">
-        <Form.Label>Email</Form.Label>
-        <Form.Control
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          isInvalid={!!errors.email}
-          placeholder="Enter agent email"
-        />
-        <Form.Control.Feedback type="invalid">
-          {errors.email}
-        </Form.Control.Feedback>
-      </Form.Group>
-
-      <Form.Group className="mb-3">
-        <Form.Label>Mobile Number (with country code)</Form.Label>
-        <Form.Control
-          type="text"
-          name="mobile"
-          value={formData.mobile}
-          onChange={handleChange}
-          isInvalid={!!errors.mobile}
-          placeholder="E.g., +1234567890"
-        />
-        <Form.Control.Feedback type="invalid">
-          {errors.mobile}
-        </Form.Control.Feedback>
-      </Form.Group>
-
-      <Form.Group className="mb-3">
-        <Form.Label>
-          {agent ? "Password (leave blank to keep current)" : "Password"}
-        </Form.Label>
-        <Form.Control
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          isInvalid={!!errors.password}
-          placeholder="Enter password"
-        />
-        <Form.Control.Feedback type="invalid">
-          {errors.password}
-        </Form.Control.Feedback>
-      </Form.Group>
-
-      <div className="d-flex justify-content-end">
-        <Button variant="secondary" onClick={onCancel} className="me-2">
-          Cancel
-        </Button>
-        <Button variant="primary" type="submit">
-          {agent ? "Update Agent" : "Add Agent"}
-        </Button>
-      </div>
-    </Form>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Name
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Email
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Mobile
+            </th>
+            <th
+              scope="col"
+              className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {agents.length === 0 ? (
+            <tr>
+              <td
+                colSpan="4"
+                className="px-6 py-4 text-center text-sm text-gray-500"
+              >
+                No agents found. Add your first agent.
+              </td>
+            </tr>
+          ) : (
+            agents.map((agent) => (
+              <tr key={agent._id}>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {agent.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {agent.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {agent.mobile}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <Link
+                    to={`/agents/${agent._id}`}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    Edit
+                  </Link>
+                  <Link
+                    to={`/lists/agent/${agent._id}`}
+                    className="text-green-600 hover:text-green-900 mr-4"
+                  >
+                    View Lists
+                  </Link>
+                  <button
+                    onClick={() => onDelete(agent._id)}
+                    disabled={isDeleting}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
-export default AgentForm;
+export default AgentList;

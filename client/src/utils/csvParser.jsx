@@ -1,112 +1,69 @@
-/* eslint-disable no-useless-catch */
-import * as XLSX from "xlsx";
-import Papa from "papaparse";
+/**
+ * Utility functions for parsing and validating CSV files
+ */
 
-// Function to parse CSV file
-export const parseCSV = (file) => {
-  return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          reject(results.errors);
-        } else {
-          resolve(results.data);
-        }
-      },
-      error: (error) => {
-        reject(error);
-      },
+export const parseCSV = (csvContent) => {
+  // Split the CSV content into lines
+  const lines = csvContent.split("\n");
+
+  // Get the header line and parse it
+  const headerLine = lines[0];
+  const headers = headerLine.split(",").map((header) => header.trim());
+
+  // Validate required headers
+  const requiredHeaders = ["FirstName", "Phone", "Notes"];
+  const missingHeaders = requiredHeaders.filter(
+    (header) => !headers.includes(header)
+  );
+
+  if (missingHeaders.length > 0) {
+    throw new Error(
+      `CSV is missing required headers: ${missingHeaders.join(", ")}`
+    );
+  }
+
+  // Parse the data rows
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue; // Skip empty lines
+
+    const values = lines[i].split(",");
+    if (values.length !== headers.length) {
+      throw new Error(`Line ${i + 1} has an incorrect number of values`);
+    }
+
+    const row = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index].trim();
     });
-  });
+
+    rows.push(row);
+  }
+
+  return rows;
 };
 
-// Function to parse Excel file (XLSX/XLS)
-export const parseExcel = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+export const validateCSVData = (data) => {
+  const errors = [];
 
-    reader.onload = (event) => {
-      try {
-        const data = event.target.result;
-        const workbook = XLSX.read(data, { type: "binary" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        resolve(jsonData);
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    reader.onerror = (error) => {
-      reject(error);
-    };
-
-    reader.readAsBinaryString(file);
-  });
-};
-
-// Main function to parse file based on type
-export const parseFile = async (file) => {
-  const fileExtension = file.name.split(".").pop().toLowerCase();
-
-  try {
-    let data;
-
-    if (fileExtension === "csv") {
-      data = await parseCSV(file);
-    } else if (["xlsx", "xls"].includes(fileExtension)) {
-      data = await parseExcel(file);
-    } else {
-      throw new Error("Unsupported file format");
+  data.forEach((row, index) => {
+    // Validate FirstName
+    if (!row.FirstName) {
+      errors.push(`Row ${index + 1}: FirstName is required`);
     }
 
-    // Validate required columns
-    validateColumns(data);
-
-    return data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-// Function to validate if data has required columns
-const validateColumns = (data) => {
-  if (!data || data.length === 0) {
-    throw new Error("File contains no data");
-  }
-
-  const firstRow = data[0];
-  const requiredColumns = ["FirstName", "Phone", "Notes"];
-
-  // Check if all required columns exist (case insensitive)
-  const columnKeys = Object.keys(firstRow).map((key) => key.toLowerCase());
-
-  for (const col of requiredColumns) {
-    if (!columnKeys.includes(col.toLowerCase())) {
-      throw new Error(`Required column "${col}" is missing`);
+    // Validate Phone
+    if (!row.Phone) {
+      errors.push(`Row ${index + 1}: Phone is required`);
+    } else if (!/^\d+$/.test(row.Phone)) {
+      errors.push(`Row ${index + 1}: Phone should contain only numbers`);
     }
-  }
+  });
 
-  return true;
+  return errors;
 };
 
-// Function to convert data to consistent format
-export const normalizeData = (data) => {
-  return data.map((row) => {
-    // Find the actual column names regardless of case
-    const keys = Object.keys(row);
-    const firstNameKey = keys.find((key) => key.toLowerCase() === "firstname");
-    const phoneKey = keys.find((key) => key.toLowerCase() === "phone");
-    const notesKey = keys.find((key) => key.toLowerCase() === "notes");
-
-    return {
-      firstName: row[firstNameKey] || "",
-      phone: row[phoneKey] || "",
-      notes: row[notesKey] || "",
-    };
-  });
+export default {
+  parseCSV,
+  validateCSVData,
 };

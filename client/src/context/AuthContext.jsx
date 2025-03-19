@@ -1,39 +1,83 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import * as api from "../api/api";
 
-const AuthContext = createContext();
+// Create context
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
+  // Check if user is already logged in (from localStorage)
   useEffect(() => {
-    // Check if user is already logged in
-    const userInfo = localStorage.getItem("userInfo");
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
-    }
-    setLoading(false);
+    const checkLoggedIn = async () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      } catch (err) {
+        console.error("Error checking authentication status:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkLoggedIn();
   }, []);
 
-  const login = (userData) => {
-    localStorage.setItem("userInfo", JSON.stringify(userData));
-    localStorage.setItem("token", userData.token);
-    setUser(userData);
-    return userData;
+  // Login function
+  const login = async (email, password) => {
+    try {
+      setError(null);
+      setLoading(true);
+      const userData = await api.login({ email, password });
+      setUser(userData);
+      navigate("/dashboard");
+      return userData;
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Login failed";
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Logout function
   const logout = () => {
-    localStorage.removeItem("userInfo");
-    localStorage.removeItem("token");
+    api.logout();
     setUser(null);
+    navigate("/login");
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Check if user is admin
+  const isAdmin = () => {
+    return user?.role === "admin";
+  };
+
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    isAdmin,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Custom hook to use auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
+
+export default AuthProvider;

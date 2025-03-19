@@ -1,94 +1,157 @@
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col, Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import axios from "axios";
-import Layout from "../components/Layout";
+import { getAllAgents, getAllLists } from "../api/api";
+import { useAuth } from "../context/AuthContext";
+import { FiUsers, FiList, FiDatabase } from "react-icons/fi";
+import { MdPersonAdd, MdUpload } from "react-icons/md";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalAgents: 0,
     totalLists: 0,
+    totalLeads: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const [agentsRes, listsRes] = await Promise.all([
-          axios.get("/api/agents"),
-          axios.get("/api/lists"),
+        setLoading(true);
+        const [agents, lists] = await Promise.all([
+          getAllAgents(),
+          getAllLists(),
         ]);
 
+        const totalLeadsCount = lists.reduce(
+          (total, list) => total + (list.items ? list.items.length : 0),
+          0
+        );
+
         setStats({
-          totalAgents: agentsRes.data.length,
-          totalLists: listsRes.data.length,
+          totalAgents: agents.length,
+          totalLists: lists.length,
+          totalLeads: totalLeadsCount,
         });
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchDashboardData();
   }, []);
-
-  const dashboardItems = [
-    {
-      title: "Manage Agents",
-      description: "Create, update, and delete agent accounts",
-      link: "/agents",
-      icon: "👥",
-      count: stats.totalAgents,
-    },
-    {
-      title: "List Management",
-      description: "Upload and distribute lists to agents",
-      link: "/lists",
-      icon: "📋",
-      count: stats.totalLists,
-    },
-  ];
 
   if (loading) {
     return (
-      <Layout>
-        <Container className="mt-4">
-          <h2>Loading dashboard...</h2>
-        </Container>
-      </Layout>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        role="alert"
+      >
+        <strong className="font-bold">Error!</strong>
+        <span className="block sm:inline"> {error}</span>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <Container className="mt-4">
-        <h2 className="mb-4">Admin Dashboard</h2>
-        <Row>
-          {dashboardItems.map((item, index) => (
-            <Col key={index} md={6} className="mb-4">
-              <Link to={item.link} className="text-decoration-none">
-                <Card className="h-100 dashboard-card shadow-sm hover-effect">
-                  <Card.Body className="d-flex flex-column">
-                    <div className="d-flex align-items-center mb-3">
-                      <div className="dashboard-icon me-3">{item.icon}</div>
-                      <Card.Title className="mb-0">{item.title}</Card.Title>
-                    </div>
-                    <Card.Text>{item.description}</Card.Text>
-                    <div className="mt-auto pt-3 border-top">
-                      <div className="d-flex justify-content-between">
-                        <span>Total: {item.count}</span>
-                        <span className="text-primary">View &rarr;</span>
-                      </div>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Link>
-            </Col>
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="bg-white px-6 py-5 border-b border-gray-200 rounded-lg shadow mb-6">
+          <h3 className="text-lg font-medium text-gray-900">
+            Welcome back, {user?.email}
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Here's an overview of your lead management system.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          {[
+            {
+              label: "Total Agents",
+              value: stats.totalAgents,
+              icon: <FiUsers />,
+              link: "/agents",
+            },
+            {
+              label: "Total Lists",
+              value: stats.totalLists,
+              icon: <FiList />,
+              link: "/lists",
+            },
+            {
+              label: "Total Leads",
+              value: stats.totalLeads,
+              icon: <FiDatabase />,
+              link: "/lists",
+            },
+          ].map((stat, index) => (
+            <div
+              key={index}
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
+              <div className="px-6 py-5 flex items-center">
+                <div className="text-indigo-600 text-3xl mr-4">{stat.icon}</div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">
+                    {stat.label}
+                  </dt>
+                  <dd className="mt-1 text-3xl font-semibold text-indigo-600">
+                    {stat.value}
+                  </dd>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-6 py-4">
+                <Link
+                  to={stat.link}
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  View details
+                </Link>
+              </div>
+            </div>
           ))}
-        </Row>
-      </Container>
-    </Layout>
+        </div>
+
+        <div className="mt-8 bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              to="/agents/new"
+              className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <MdPersonAdd className="mr-2 text-lg" /> Add New Agent
+            </Link>
+            <Link
+              to="/lists"
+              className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+            >
+              <MdUpload className="mr-2 text-lg" /> Upload New List
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

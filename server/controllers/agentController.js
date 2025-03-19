@@ -90,6 +90,19 @@ exports.updateAgent = async (req, res) => {
       return res.status(404).json({ message: "Agent not found" });
     }
 
+    // Check if email is being changed and if it's already in use
+    if (email && email !== agent.email) {
+      const emailExists = await Agent.findOne({
+        email,
+        _id: { $ne: req.params.id },
+      });
+      if (emailExists) {
+        return res
+          .status(400)
+          .json({ message: "Email already in use by another agent" });
+      }
+    }
+
     agent.name = name || agent.name;
     agent.email = email || agent.email;
     agent.mobile = mobile || agent.mobile;

@@ -19,6 +19,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import "bootstrap/dist/css/bootstrap.min.css";
 // Custom CSS
 import "./App.css";
+import AuthProvider from "./context/AuthContext";
 
 const App = () => {
   useEffect(() => {
@@ -47,49 +48,51 @@ const App = () => {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/agents"
-          element={
-            <ProtectedRoute>
-              <Agents />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/lists"
-          element={
-            <ProtectedRoute>
-              <ListManagement />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route
-          path="*"
-          element={
-            <Container className="d-flex justify-content-center align-items-center min-vh-100">
-              <div className="text-center">
-                <h1>404</h1>
-                <h3>Page Not Found</h3>
-                <p>The page you are looking for does not exist.</p>
-                <a href="/dashboard" className="btn btn-primary">
-                  Back to Dashboard
-                </a>
-              </div>
-            </Container>
-          }
-        />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/agents"
+            element={
+              <ProtectedRoute>
+                <Agents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lists"
+            element={
+              <ProtectedRoute>
+                <ListManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="*"
+            element={
+              <Container className="d-flex justify-content-center align-items-center min-vh-100">
+                <div className="text-center">
+                  <h1>404</h1>
+                  <h3>Page Not Found</h3>
+                  <p>The page you are looking for does not exist.</p>
+                  <a href="/dashboard" className="btn btn-primary">
+                    Back to Dashboard
+                  </a>
+                </div>
+              </Container>
+            }
+          />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 };

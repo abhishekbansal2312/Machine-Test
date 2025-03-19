@@ -128,11 +128,9 @@ exports.uploadAndDistributeList = async (req, res) => {
       .toLowerCase()
       .substring(1);
     if (!["csv", "xlsx", "xls"].includes(fileExtension)) {
-      return res
-        .status(400)
-        .json({
-          message: "Invalid file format. Only CSV, XLSX, and XLS are allowed.",
-        });
+      return res.status(400).json({
+        message: "Invalid file format. Only CSV, XLSX, and XLS are allowed.",
+      });
     }
 
     // Parse file
@@ -190,6 +188,9 @@ exports.uploadAndDistributeList = async (req, res) => {
 // @access  Private/Admin
 exports.getListsByAgentId = async (req, res) => {
   try {
+    if (!req.params.agentId || req.params.agentId === "undefined") {
+      return res.status(400).json({ message: "Valid agent ID is required" });
+    }
     const lists = await List.find({ agentId: req.params.agentId });
 
     if (!lists.length) {
