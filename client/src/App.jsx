@@ -25,7 +25,7 @@ import AgentDetails from "./components/AgentDetails";
 const App = () => {
   useEffect(() => {
     // Set the default base URL for axios requests
-    axios.defaults.baseURL = "http://localhost:5004";
+    axios.defaults.baseURL = "https://machine-test-h0sq.onrender.com";
 
     // Set the auth token for all requests if it exists
     const token = localStorage.getItem("token");
@@ -81,7 +81,7 @@ const App = () => {
               />
               <Route path="/lists/agent/:id" element={<AgentDetails />} />
 
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Dashboard />} />
               <Route
                 path="*"
                 element={
