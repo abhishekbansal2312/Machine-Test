@@ -1,39 +1,42 @@
-import axios from "axios";
-
 const API_URL = "https://machine-test-h0sq.onrender.com/api";
 
-// Create axios instance with base URL
-const api = axios.create({
-  baseURL: API_URL,
-});
+// Helper function for making requests
+const request = async (url, options = {}) => {
+  const token = localStorage.getItem("token");
 
-// Add request interceptor to include auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_URL}${url}`, { ...options, headers });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
   }
-);
 
-// Auth services
-export const register = async (userData) => {
-  const response = await api.post("/auth/register", userData);
-  return response.data;
+  return response.json();
 };
 
+// Auth services
+export const register = (userData) =>
+  request("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(userData),
+  });
+
 export const login = async (credentials) => {
-  const response = await api.post("/auth/login", credentials);
-  if (response.data.token) {
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data));
+  const data = await request("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data));
   }
-  return response.data;
+  return data;
 };
 
 export const logout = () => {
@@ -42,50 +45,37 @@ export const logout = () => {
 };
 
 // Agent services
-export const createAgent = async (agentData) => {
-  const response = await api.post("/agents", agentData);
-  return response.data;
-};
+export const createAgent = (agentData) =>
+  request("/agents", {
+    method: "POST",
+    body: JSON.stringify(agentData),
+  });
 
-export const getAllAgents = async () => {
-  const response = await api.get("/agents");
-  return response.data;
-};
+export const getAllAgents = () => request("/agents");
 
-export const getAgentById = async (id) => {
-  const response = await api.get(`/agents/${id}`);
-  return response.data;
-};
+export const getAgentById = (id) => request(`/agents/${id}`);
 
-export const updateAgent = async (id, agentData) => {
-  const response = await api.put(`/agents/${id}`, agentData);
-  return response.data;
-};
+export const updateAgent = (id, agentData) =>
+  request(`/agents/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(agentData),
+  });
 
-export const deleteAgent = async (id) => {
-  const response = await api.delete(`/agents/${id}`);
-  return response.data;
-};
+export const deleteAgent = (id) =>
+  request(`/agents/${id}`, { method: "DELETE" });
 
 // List services
-export const uploadList = async (formData) => {
-  const response = await api.post("/lists/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+export const uploadList = (formData) =>
+  request("/lists/upload", {
+    method: "POST",
+    body: formData, // `fetch` can handle FormData directly
+    headers: {}, // No need to set Content-Type for FormData; the browser does it automatically
   });
-  return response.data;
-};
 
-export const getListsByAgentId = async (agentId) => {
-  const response = await api.get(`/lists/agent/${agentId}`);
-  return response.data;
-};
+export const getListsByAgentId = (agentId) =>
+  request(`/lists/agent/${agentId}`);
 
-export const getAllLists = async () => {
-  const response = await api.get("/lists");
-  return response.data;
-};
+export const getAllLists = () => request("/lists");
 
 export default {
   register,

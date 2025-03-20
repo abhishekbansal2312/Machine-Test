@@ -6,7 +6,6 @@ import {
   Navigate,
   Link,
 } from "react-router-dom";
-import axios from "axios";
 
 // Components
 import Login from "./pages/Login";
@@ -22,29 +21,42 @@ import "./App.css";
 import AuthProvider from "./context/AuthContext";
 import AgentDetails from "./components/AgentDetails";
 
-const App = () => {
-  useEffect(() => {
-    // Set the default base URL for axios requests
-    axios.defaults.baseURL = "https://machine-test-h0sq.onrender.com";
+const API_URL = "https://machine-test-h0sq.onrender.com";
 
-    // Set the auth token for all requests if it exists
-    const token = localStorage.getItem("token");
-    if (token) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+// Function to make API requests using fetch
+const fetchWithAuth = async (url, options = {}) => {
+  const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+
+  try {
+    const response = await fetch(`${API_URL}${url}`, {
+      ...options,
+      headers: { ...headers, ...options.headers },
+    });
+
+    if (response.status === 401) {
+      localStorage.removeItem("userInfo");
+      localStorage.removeItem("token");
+      window.location = "/login";
+      return;
     }
 
-    // Handle 401 Unauthorized responses globally
-    axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          localStorage.removeItem("userInfo");
-          localStorage.removeItem("token");
-          window.location = "/login";
-        }
-        return Promise.reject(error);
-      }
-    );
+    return response.json();
+  } catch (error) {
+    console.error("API request error:", error);
+    throw error;
+  }
+};
+
+const App = () => {
+  useEffect(() => {
+    // Attempt an API request to verify token validity
+    fetchWithAuth("/verify-token").catch(() => {
+      console.log("Invalid token or network issue");
+    });
   }, []);
 
   return (
