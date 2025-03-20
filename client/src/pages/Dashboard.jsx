@@ -130,26 +130,6 @@ const Dashboard = () => {
             </div>
           ))}
         </div>
-
-        <div className="mt-8 bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Link
-              to="/agents/new"
-              className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              <MdPersonAdd className="mr-2 text-lg" /> Add New Agent
-            </Link>
-            <Link
-              to="/lists"
-              className="flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-            >
-              <MdUpload className="mr-2 text-lg" /> Upload New List
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );
