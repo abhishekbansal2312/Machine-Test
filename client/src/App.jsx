@@ -93,7 +93,8 @@ const App = () => {
               />
               <Route path="/lists/agent/:id" element={<AgentDetails />} />
 
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+
               <Route
                 path="*"
                 element={
