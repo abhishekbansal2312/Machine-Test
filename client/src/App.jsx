@@ -20,6 +20,7 @@ import Footer from "./components/Footer";
 // Custom CSS
 import "./App.css";
 import AuthProvider from "./context/AuthContext";
+import AgentDetails from "./components/AgentDetails";
 
 const App = () => {
   useEffect(() => {
@@ -78,6 +79,8 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route path="/lists/agent/:id" element={<AgentDetails />} />
+
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route
                 path="*"
